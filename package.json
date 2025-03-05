@@ -1,0 +1,19 @@
+{
+  "name": "dream-book-sync",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@woocommerce/woocommerce-rest-api": "^1.0.1",
+    "amazon-sp-api": "^1.1.5",
+    "axios": "^1.7.9",
+    "body-parser": "^1.20.3",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "html-to-text": "^9.0.5",
+    "mongoose": "^8.10.1",
+    "node-cron": "^3.0.3"
+  }
+}
