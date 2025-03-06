@@ -13,8 +13,17 @@ const mongoose = require("mongoose");
 const wooCommerceService = require("./services/woocommerce");
 const amazonService = require("./services/amazon");
 
+// NEW: Import the authors route
+const authorsRoute = require("./routes/authors");
+
+// ADD THIS: import our new books route
+const booksRoute = require("./routes/books");
+
 const app = express();
 app.use(bodyParser.json());
+
+// Serve static files in "uploads" so images can be accessed
+app.use("/uploads", express.static("uploads"));
 
 const PORT = process.env.PORT || 3000;
 
@@ -23,6 +32,9 @@ mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTop
 const db = mongoose.connection;
 db.on("error", console.error.bind(console, "❌ MongoDB Connection Error:"));
 db.once("open", () => console.log("✅ Connected to MongoDB"));
+
+// Use the books route
+app.use("/api/books", booksRoute);
 
 // (Optional) Define API endpoints for your frontend here if needed
 

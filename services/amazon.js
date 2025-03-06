@@ -129,30 +129,74 @@ const fetchAmazonProducts = async () => {
           endpoint: "catalogItems",
           path: { asin },
           query: {
-            marketplaceIds: ["A21TJRUUN4KGV"]
+            marketplaceIds: ["A21TJRUUN4KGV"],
+            includedData: "summaries,images,attributes" 
           }
         });
 
         console.log("📦 Product Response for ASIN:", asin, JSON.stringify(product, null, 2));
 
-        if (!product || !product.summaries || !Array.isArray(product.summaries) || product.summaries.length === 0) {
-          console.warn(`⚠️ Missing or incomplete product data for ASIN ${asin}`);
-          continue;
-        }
+        // if (!product || !product.summaries || !Array.isArray(product.summaries) || product.summaries.length === 0) {
+        //   console.warn(`⚠️ Missing or incomplete product data for ASIN ${asin}`);
+        //   continue;
+        // }
 
-        const productSummary = product.summaries[0];
+         // CHANGE: Handle missing or incomplete product data.
+         let productSummary;
+         if (product.summaries && Array.isArray(product.summaries) && product.summaries.length > 0) {
+           productSummary = product.summaries[0];
+         } else if (product.asin) {
+           // Fallback when summaries are missing
+           productSummary = {
+             itemName: "Product " + product.asin,  // Fallback title using ASIN
+             description: "Incomplete product data", // Default description
+             shortDescription: "Incomplete product data",
+             images: [] // Initialize images array
+           };
+           // CHANGE: Try to extract images from the top-level images field
+           if (product.images && Array.isArray(product.images) && product.images.length > 0) {
+             const marketplaceImages = product.images[0]; // Taking the first marketplace object
+             if (marketplaceImages.images && Array.isArray(marketplaceImages.images) && marketplaceImages.images.length > 0) {
+               // Prefer MAIN variant if available; otherwise, use the first image
+               const mainImage = marketplaceImages.images.find(img => img.variant === "MAIN") || marketplaceImages.images[0];
+               // Note: Amazon returns "link" as the URL field; we adjust to our expected format.
+               productSummary.images.push({ url: mainImage.link });
+             }
+           }
+         } else {
+           console.warn(`⚠️ Missing or incomplete product data for ASIN ${asin}`);
+           continue;
+         }
+
+        // const productSummary = product.summaries[0];
         const price = await fetchProductPrice(asin);
 
-        const additionalDetails = {
-          publisher: "Dreambook Publishing",
-          pages: 43,
-          item_weight: "300 g",
-          dimensions: "22 x 15 x 3 cm",
-          country_of_origin: "India",
-          packer: "info@dreambookpublishing.com",
-          generic_name: "Book",
-          unspsc_code: "55101500"
-        };
+        // Summaries -> get itemName as title if present
+        let title = "No title available";
+        if (product.summaries && Array.isArray(product.summaries) && product.summaries.length > 0) {
+          if (product.summaries[0].itemName) {
+            title = product.summaries[0].itemName;
+          }
+        }
+
+        // CHANGE: Extract image URL from productSummary if available
+        let imageUrl = "";
+        if (productSummary.images && Array.isArray(productSummary.images) && productSummary.images.length > 0) {
+          imageUrl = productSummary.images[0].url; // <-- NEW: Extract image URL
+        }
+      
+
+    
+        // const additionalDetails = {
+        //   publisher: "Dreambook Publishing",
+        //   pages: 43,
+        //   item_weight: "300 g",
+        //   dimensions: "22 x 15 x 3 cm",
+        //   country_of_origin: "India",
+        //   packer: "info@dreambookpublishing.com",
+        //   generic_name: "Book",
+        //   unspsc_code: "55101500"
+        // };
 
         await Product.findOneAndUpdate(
           { id: asin },
@@ -162,15 +206,16 @@ const fetchAmazonProducts = async () => {
             price: price,
             description: productSummary.description || "No description available",
             short_description: productSummary.shortDescription || "No short description available",
-            sku: asin,
+            // sku: asin,
             stock_quantity: 0, // Amazon does not provide stock quantity directly
-            images: [],
+            // images: [],
+            images: imageUrl ? [{ src: imageUrl }] : [], // <-- NEW: Save image URL in the images array
             categories: [],
             date_modified: new Date().toISOString(),
             created_date: new Date().toISOString(),
             author_name: productSummary.manufacturer || "Unknown",
             source: "amazon",
-            ...additionalDetails
+
           },
           { upsert: true }
         );
