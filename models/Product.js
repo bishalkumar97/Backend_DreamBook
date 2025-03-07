@@ -59,7 +59,7 @@ packer: String,
 generic_name: String,
 unspsc_code: String,
 
-  source: { type: String, enum: ["woocommerce", "amazon", "custom"], required: true }
+  source: { type: String, enum: ["woocommerce", "amazon", "kindle", "custom"], required: true }
 }, { timestamps: true });
 
 module.exports = mongoose.model("Product", productSchema);

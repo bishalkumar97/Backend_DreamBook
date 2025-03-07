@@ -12,6 +12,7 @@ const mongoose = require("mongoose");
 // Import the WooCommerce and Amazon service functions
 const wooCommerceService = require("./services/woocommerce");
 const amazonService = require("./services/amazon");
+const kindleService = require("./services/kindle");
 
 // NEW: Import the authors route
 const authorsRoute = require("./routes/authors");
@@ -36,6 +37,36 @@ db.once("open", () => console.log("✅ Connected to MongoDB"));
 // Use the books route
 app.use("/api/books", booksRoute);
 
+// Test fetching Kindle products
+app.get('/test-kindle-products', async (req, res) => {
+  try {
+    const data = await kindleService.fetchKindleProducts();
+    res.json({ success: true, data });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Error fetching Kindle products" });
+  }
+});
+
+// Test fetching Kindle orders
+app.get('/test-kindle-orders', async (req, res) => {
+  try {
+    const orders = await kindleService.fetchKindleOrders();
+    res.json({ success: true, orders });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Error fetching Kindle orders" });
+  }
+});
+
+// Test calculating Kindle analytics
+app.get('/test-kindle-analytics', async (req, res) => {
+  try {
+    const analytics = await kindleService.calculateKindleAnalytics();
+    res.json({ success: true, analytics });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Error calculating Kindle analytics" });
+  }
+});
+
 // (Optional) Define API endpoints for your frontend here if needed
 
 // Schedule Cron Jobs to run at minute 0 of every hour
@@ -46,6 +77,7 @@ cron.schedule("0 * * * *", async () => {
   const amazonOrders = await amazonService.fetchAmazonOrders(); // Fetch Amazon orders
   await amazonService.saveAmazonOrders(amazonOrders);      // Save Amazon orders to DB
   await amazonService.fetchAmazonProducts();             // Sync Amazon products
+  await kindleService.fetchKindleProducts(); // NEW: Fetch Kindle products
   const monthlySales = await wooCommerceService.calculateMonthlySales(); // Calculate monthly sales
   await wooCommerceService.calculateRoyalties(monthlySales);             // Calculate royalties
   console.log("✅ Scheduled tasks completed.");
@@ -59,6 +91,19 @@ app.listen(PORT, async () => {
   const amazonOrders = await amazonService.fetchAmazonOrders();
   await amazonService.saveAmazonOrders(amazonOrders);
   await amazonService.fetchAmazonProducts();
+  await kindleService.fetchKindleProducts(); // NEW: Fetch Kindle products
   const monthlySales = await wooCommerceService.calculateMonthlySales();
   await wooCommerceService.calculateRoyalties(monthlySales);
+});
+
+
+// Add in server.js
+app.get('/test-kindle', async (req, res) => {
+  try {
+    const kindleData = await require('./services/kindle').fetchKindleProducts();
+    res.json({ success: true, data: kindleData });
+  } catch (error) {
+    console.error("Error fetching Kindle data:", error);
+    res.status(500).json({ success: false, message: "Error fetching Kindle data" });
+  }
 });
