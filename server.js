@@ -20,6 +20,9 @@ const authorsRoute = require("./routes/authors");
 // ADD THIS: import our new books route
 const booksRoute = require("./routes/books");
 
+// NEW CHANGE #1: Import the new books-info route to fetch combined books info (products and analytics)
+const booksInfoRoute = require("./routes/books-info");
+
 const app = express();
 app.use(bodyParser.json());
 
@@ -36,6 +39,9 @@ db.once("open", () => console.log("✅ Connected to MongoDB"));
 
 // Use the books route
 app.use("/api/books", booksRoute);
+app.use("/api/authors", authorsRoute);
+// NEW CHANGE #2: Use the new books-info route for fetching books info (products and analytics)
+app.use("/api/books-info", booksInfoRoute);
 
 // Test fetching Kindle products
 app.get('/test-kindle-products', async (req, res) => {
